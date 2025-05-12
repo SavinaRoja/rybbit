@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rybbit.clickhouse.fullname" . }}
+  labels:
+    {{- include "rybbit.clickhouse.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.clickhouse.ports.httpPort.port }}
+      targetPort: http
+      protocol: {{ .Values.clickhouse.ports.httpPort.protocol }}
+      name: http
+    - port: {{ .Values.clickhouse.ports.nativePort.port }}
+      targetPort: native
+      protocol: {{ .Values.clickhouse.ports.nativePort.protocol }}
+      name: native
+  selector:
+    {{- include "rybbit.clickhouse.selectorLabels" . | nindent 4 }}

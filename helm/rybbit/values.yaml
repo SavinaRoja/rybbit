@@ -1,0 +1,169 @@
+### GLOBAL / BASE ###
+# This is for the secrets for pulling an image from a private repository more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+imagePullSecrets: []
+# This is to override the chart name.
+nameOverride: ""
+fullnameOverride: ""
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# This section builds out the service account more information can be found here: https://kubernetes.io/docs/concepts/security/service-accounts/
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Automatically mount a ServiceAccount's API credentials?
+  automount: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+### CLICKHOUSE ###
+clickhouse:
+  nameOverride: ""
+  fullnameOverride: ""
+  image:
+    repository: docker.io/clickhouse/clickhouse-server
+    pullPolicy: IfNotPresent
+    tag: "25.4.2"
+  env:
+    CLICKHOUSE_DB: "analytics"
+    CLICKHOUSE_USER: "default"
+    CLICKHOUSE_PASSWORD: "frog"
+  # This is for setting Kubernetes Annotations to a Pod.
+  # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+  podAnnotations: {}
+  # This is for setting Kubernetes Labels to a Pod.
+  # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+  podLabels: {}
+  ports:
+    httpPort:
+      port: 8123
+      protocol: TCP
+    nativePort:
+      port: 9000
+      protocol: TCP
+  livenessProbe:
+    httpGet:
+      path: /ping
+      port: http
+  readinessProbe:
+    httpGet:
+      path: /ping
+      port: http
+  resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+
+### POSTGRESQL ###
+postgresql:
+  nameOverride: ""
+  fullnameOverride: ""
+  image:
+    repository: docker.io/library/postgres
+    pullPolicy: IfNotPresent
+    tag: "17.4"
+  env:
+    POSTGRES_USER: frog
+    POSTGRES_PASSWORD: frog
+    POSTGRES_DB: analytics
+  resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+
+### RYBBIT BACKEND ###
+backend:
+  nameOverride: ""
+  fullnameOverride: ""
+  image:
+    repository: ghcr.io/rybbit-io/rybbit-backend
+    pullPolicy: IfNotPresent
+    tag: latest
+  env:
+    NODE_ENV: development
+    DISABLE_SIGNUP: "false"
+    BETTER_AUTH_SECRET: insecure-secret
+    BASE_URL: https://demo.rybbit.io
+  resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+### RYBBIT CLIENT ###
+client:
+  nameOverride: ""
+  fullnameOverride: ""
+  image:
+    repository: ghcr.io/rybbit-io/rybbit-client
+    pullPolicy: IfNotPresent
+    tag: latest
+  env:
+    NODE_ENV: development
+    NEXT_PUBLIC_BACKEND_URL: https://demo.rybbit.io
+    NEXT_PUBLIC_DISABLE_SIGNUP: "false"
+  resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  ingress:
+    enabled: true
+
+
+### INGRESS ###
+# Currently, application is configured to use a single ingress which exposes only the client and the backend
+# More information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hostUrl: ""
+  tlsEnabled: false

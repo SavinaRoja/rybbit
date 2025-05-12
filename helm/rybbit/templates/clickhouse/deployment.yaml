@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "rybbit.clickhouse.fullname" . }}
+  labels:
+    {{- include "rybbit.clickhouse.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "rybbit.clickhouse.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.clickhouse.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "rybbit.clickhouse.labels" . | nindent 8 }}
+        {{- with .Values.clickhouse.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "rybbit.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.clickhouse.image.repository }}:{{ .Values.clickhouse.image.tag }}"
+          imagePullPolicy: {{ .Values.clickhouse.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.clickhouse.ports.httpPort.port }}
+              protocol:  {{ .Values.clickhouse.ports.httpPort.protocol }}
+            - name: native
+              containerPort: {{ .Values.clickhouse.ports.nativePort.port }}
+              protocol:  {{ .Values.clickhouse.ports.nativePort.protocol }}
+          env:
+            - name: CLICKHOUSE_DB
+              value: {{ .Values.clickhouse.env.CLICKHOUSE_DB }}
+            - name: CLICKHOUSE_USER
+              value: {{ .Values.clickhouse.env.CLICKHOUSE_USER }}
+            - name: CLICKHOUSE_PASSWORD
+              value: {{ .Values.clickhouse.env.CLICKHOUSE_PASSWORD }}
+          {{- with .Values.clickhouse.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.clickhouse.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.clickhouse.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /var/lib/clickhouse
+              name: data
+            - mountPath: /etc/clickhouse-server/config.d
+              name: config-files
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "rybbit.clickhouse.pvcName" . }}
+        - name: config-files
+          configMap:
+            name: {{ include "rybbit.clickhouse.fullname" . }}
+            items:
+              - key: enable_json.xml
+                path: enable_json.xml
+              - key: logging_rules.xml
+                path: logging_rules.xml
+              - key: network.xml
+                path: network.xml
+              - key: user_logging.xml
+                path: user_logging.xml
+      {{- with .Values.clickhouse.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.clickhouse.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.clickhouse.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

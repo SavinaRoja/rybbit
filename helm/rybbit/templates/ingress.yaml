@@ -1,0 +1,40 @@
+{{- if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "rybbit.fullname" . }}
+  labels:
+    {{- include "rybbit.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- if .Values.ingress.tlsEnabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.hostUrl | quote }}
+      secretName: {{ .Values.ingress.hostUrl | replace "." "-" | quote}}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.hostUrl | quote }}
+      http:
+        paths:
+          - path: "/api"
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "rybbit.backend.fullname" . }}
+                port:
+                  number: 3001
+          - path: "/"
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "rybbit.client.fullname" . }}
+                port:
+                  number: 3002
+{{- end }}
